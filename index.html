@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeedScope Visualization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+            color: #111827;
+            overflow: hidden;
+            font-feature-settings: 'kern' 1, 'liga' 1;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            position: relative;
+            background: radial-gradient(ellipse at center, rgba(255,255,255,0.8) 0%, rgba(248,250,252,0.9) 100%);
+            padding: 20px 20px 20px;
+            box-sizing: border-box;
+        }
+
+        .main-title {
+            font-family: "Inter", "SF Pro Display", system-ui, sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            color: #1f2937;
+            letter-spacing: -0.03em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .needscope-container {
+            position: relative;
+            width: 95vw;
+            height: 85vh;
+            filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.08));
+        }
+
+        @media (max-width: 1440px) {
+            .panel {
+                width: 400px;
+                left: 20px;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .needscope-container {
+                width: 100%;
+                height: 60vh;
+            }
+
+            .panel {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: min(90vw, 480px);
+                z-index: 1000;
+            }
+
+            .panel.active::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: -1;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 10px;
+            }
+
+            .panel {
+                width: 95vw;
+                padding: 24px;
+                max-height: 85vh;
+            }
+
+            .panel-title {
+                font-size: 20px;
+            }
+
+            .wedge-text {
+                font-size: 12px;
+            }
+        }
+
+        .wedge {
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .wedge:focus {
+            outline: 3px solid #3b82f6;
+            outline-offset: 3px;
+        }
+
+        .wedge:hover {
+            transform: scale(1.02);
+            fill: #f3f4f6;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+        }
+
+        .wedge-text {
+            font-weight: 900;
+            font-size: 28px;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            fill: #1f2937;
+            pointer-events: none;
+            letter-spacing: 0.2px;
+            font-family: "Inter", "SF Pro Display", system-ui, sans-serif;
+        }
+
+
+        .panel {
+            position: absolute;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 480px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px) saturate(1.2);
+            -webkit-backdrop-filter: blur(24px) saturate(1.2);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .panel-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 8px;
+            color: #64748b;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .panel-close:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: #1e293b;
+        }
+
+        .panel-close:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+
+        .panel.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .panel-title {
+            font-family: "Inter", "SF Pro Display", system-ui, sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: #1f2937;
+            letter-spacing: -0.02em;
+        }
+
+        .panel-tagline {
+            font-family: "Inter", "SF Pro Display", system-ui, sans-serif;
+            font-size: 14px;
+            color: #6B7280;
+            margin-bottom: 20px;
+            font-weight: 400;
+        }
+
+        .needs-list {
+            list-style: none;
+        }
+
+        .needs-list li {
+            font-family: "Inter", "SF Pro Display", system-ui, sans-serif;
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 8px;
+            padding-left: 16px;
+            position: relative;
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        .needs-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">Needscope: Freshness</h1>
+        <div class="needscope-container">
+            <svg viewBox="0 0 1600 900" width="100%" height="100%" role="img" aria-label="NeedScope visualization showing 6 territories of freshness">
+                <!-- Wedges will be generated here -->
+            </svg>
+            
+            <div class="panel" id="panel" role="dialog" aria-labelledby="panel-title" aria-describedby="panel-tagline">
+                <button class="panel-close" id="panel-close" aria-label="Close panel">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <div class="panel-title" id="panel-title"></div>
+                <div class="panel-tagline" id="panel-tagline"></div>
+                <ul class="needs-list" id="needs-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const data = {
+            "meta": {
+                "title": "NeedScope · Minimal 6-Slice",
+                "version": "1.0.0"
+            },
+            "style": {
+                "theme": "light",
+                "fontFamily": "SF Pro, -apple-system, system-ui, Helvetica Neue, Arial",
+                "background": "#FFFFFF",
+                "textColor": "#0A0A0A",
+                "mutedTextColor": "#6B7280",
+                "palette": {
+                    "baseStroke": "#111111",
+                    "wedge": ["#F7F7F7","#EFEFEF","#EAEAEA","#E6E6E6","#E2E2E2","#DDDDDD"],
+                    "activeWedge": "#D0D0D0",
+                    "panelSurface": "#FFFFFF",
+                    "panelBorder": "#E5E7EB"
+                }
+            },
+            "layout": {
+                "canvas": { "width": 1440, "height": 900, "padding": 56 },
+                "pie": { "cx": 600, "cy": 350, "rOuter": 280, "rInner": 0, "gapDeg": 2 }
+            },
+            "motion": {
+                "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+                "durationMs": 360,
+                "panelDurationMs": 280,
+                "scaleActive": 1.06
+            },
+            "interactions": {
+                "clickAction": "expand-wedge-and-open-panel",
+                "initialExpandedId": null,
+                "panel": {
+                    "position": "left",
+                    "width": 520,
+                    "padding": 24,
+                    "titleSize": 18,
+                    "bodySize": 14,
+                    "bullet": "dot"
+                }
+            },
+            "territories": [
+                {
+                    "id": "playful",
+                    "label": "PLAYFUL FRESHNESS",
+                    "tagline": "(fun, novelty, flavour, variety)",
+                    "angleStart": 302,
+                    "angleEnd": 358,
+                    "color": "#F59E0B",
+                    "subDescriptors": [
+                        "FUN, LIGHT FRESHNESS",
+                        "UPLIFTING, INDULGENT FRESHNESS",
+                        "LIVELY, OUTGOING FRESHNESS"
+                    ],
+                    "needs": [
+                        "Freshness that tastes as good as it feels",
+                        "Leaves a pleasant aftertaste",
+                        "Freshness that keeps boredom at bay outdoors",
+                        "Fun, playful freshness beyond clinical mint"
+                    ]
+                },
+                {
+                    "id": "invigorating",
+                    "label": "INVIGORATING FRESHNESS",
+                    "tagline": "(switch-on energy, alertness, stamina)",
+                    "angleStart": 2,
+                    "angleEnd": 58,
+                    "color": "#EF4444",
+                    "subDescriptors": [
+                        "VITAL, INVIGORATING FRESHNESS",
+                        "BOLD, REBELLIOUS FRESHNESS",
+                        "POTENT, RUGGED FRESHNESS"
+                    ],
+                    "needs": [
+                        "Helps you feel truly fresh",
+                        "Keeps your breath fresh for hours",
+                        "Leaves you refreshed and clean all day",
+                        "Freshen breath instantly",
+                        "Fresh breath, anytime on-the-go",
+                        "Instantly wakes you up",
+                        "Makes you feel instantly alert",
+                        "Boosts your mood",
+                        "Athletic freshness that signals performance & stamina",
+                        "Nicotine revival freshness (revives energy while quitting)",
+                        "Active freshness that powers your workout/training"
+                    ]
+                },
+                {
+                    "id": "elevated",
+                    "label": "ELEVATED FRESHNESS",
+                    "tagline": "(curated, ritual, sophistication, aesthetic)",
+                    "angleStart": 62,
+                    "angleEnd": 118,
+                    "color": "#8B5CF6",
+                    "subDescriptors": [
+                        "ASSERTIVE, DETERMINED FRESHNESS",
+                        "POWERFUL, STATUSFUL FRESHNESS",
+                        "LUXURIOUS, GLAMOUROUS FRESHNESS"
+                    ],
+                    "needs": [
+                        "De-stress freshness that eases night grinding",
+                        "Relaxing freshness that helps unwind",
+                        "Restorative freshness that aids sleep",
+                        "Unwind freshness for bedtime ritual",
+                        "Freshness designed to match your mood",
+                        "Work-to-party mood-shift freshness",
+                        "Artfully blended freshness experiences",
+                        "Dopamine-boosting freshness",
+                        "Serotonin-boosting freshness",
+                        "Freshness that awakens all your senses",
+                        "Sophisticated, perfumed breath",
+                        "Memorable freshness before social occasions",
+                        "Pampering oral freshness for beauty rituals",
+                        "Curated freshness that's uniquely yours",
+                        "Freshness crafted specifically for men",
+                        "Smellmaxxing / scentmaxxing / pheromone-maxxing freshness"
+                    ]
+                },
+                {
+                    "id": "focused",
+                    "label": "FOCUSED FRESHNESS",
+                    "tagline": "(problem-solver, control, precision, efficacy)",
+                    "angleStart": 122,
+                    "angleEnd": 178,
+                    "color": "#1E40AF",
+                    "subDescriptors": [
+                        "ELEGANT, DISCERNING FRESHNESS",
+                        "SMART, FOCUSED FRESHNESS",
+                        "COMPOSED, UNDERSTATED FRESHNESS"
+                    ],
+                    "needs": [
+                        "Helps you stay free of bad breath",
+                        "Eliminates unpleasant mouth odours",
+                        "Neutralises strong odours from coffee or smoke",
+                        "Prevents a stale mouth feel",
+                        "Fights morning breath",
+                        "Tackles severe, persistent bad breath (halitosis)",
+                        "Clears heavy food & drink aftertastes",
+                        "Restores freshness after a dental visit",
+                        "Balances pH for lasting freshness",
+                        "Detox-like freshness that resets your mouth",
+                        "Cleans away debris & refreshes tongue",
+                        "Quick rehydrating freshness for a dry, stale mouth",
+                        "Bad breath removal instantly"
+                    ]
+                },
+                {
+                    "id": "calming",
+                    "label": "CALMING FRESHNESS",
+                    "tagline": "(balance, wellbeing, mindfulness)",
+                    "angleStart": 182,
+                    "angleEnd": 238,
+                    "color": "#92400E",
+                    "subDescriptors": [
+                        "CALM, CLARIFYING FRESHNESS",
+                        "FRESH, SENSITIVE FRESHNESS",
+                        "WARM, TRUSTED FRESHNESS"
+                    ],
+                    "needs": []
+                },
+                {
+                    "id": "comforting",
+                    "label": "COMFORTING FRESHNESS",
+                    "tagline": "(safety, protection, reassurance, worry-free)",
+                    "angleStart": 242,
+                    "angleEnd": 298,
+                    "color": "#F97316",
+                    "subDescriptors": [
+                        "GENTLE, OPEN FRESHNESS",
+                        "WARM, INCLUSIVE FRESHNESS",
+                        "EASY GOING, SOCIABLE FRESHNESS"
+                    ],
+                    "needs": [
+                        "Breath that leaves a great impression",
+                        "Confidence without worrying about breath",
+                        "Gentle freshness to ease hormonal stress moments",
+                        "Comforting, cleansing breath",
+                        "Safe, gentle, cocooning freshness",
+                        "Temple-style calming freshness"
+                    ]
+                }
+            ]
+        };
+
+        class NeedScopeVisualization {
+            constructor() {
+                this.svg = document.querySelector('svg');
+                this.panel = document.getElementById('panel');
+                this.panelTitle = document.getElementById('panel-title');
+                this.panelTagline = document.getElementById('panel-tagline');
+                this.needsList = document.getElementById('needs-list');
+                this.activeWedge = null;
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => this.init());
+                } else {
+                    this.init();
+                }
+            }
+
+            init() {
+                try {
+                    this.createEllipticalWedges();
+                    this.setupEventListeners();
+                } catch (error) {
+                    console.error('Failed to initialize NeedScope visualization:', error);
+                }
+            }
+
+            createEllipticalWedges() {
+                const cx = 800;
+                const cy = 450;
+                const rx = 600; // horizontal radius (stretched)
+                const ry = 350; // vertical radius (compressed)
+                
+                // Create colored separators first
+                this.createSeparators(cx, cy, rx, ry);
+                
+                // Create wedges
+                data.territories.forEach((territory, index) => {
+                    this.createWedge(territory, cx, cy, rx, ry);
+                });
+            }
+
+            createSeparators(cx, cy, rx, ry) {
+                data.territories.forEach((territory, index) => {
+                    const angle = (territory.angleStart - 90) * Math.PI / 180;
+                    const x1 = cx + rx * Math.cos(angle);
+                    const y1 = cy + ry * Math.sin(angle);
+                    
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', cx);
+                    line.setAttribute('y1', cy);
+                    line.setAttribute('x2', x1);
+                    line.setAttribute('y2', y1);
+                    line.setAttribute('stroke', 'rgba(255, 255, 255, 0.6)');
+                    line.setAttribute('stroke-width', '1');
+                    line.setAttribute('stroke-linecap', 'round');
+                    
+                    this.svg.appendChild(line);
+                });
+            }
+
+            createWedge(territory, cx, cy, rx, ry) {
+                const startAngle = (territory.angleStart - 90) * Math.PI / 180;
+                const endAngle = (territory.angleEnd - 90) * Math.PI / 180;
+                
+                // Create elliptical arc path
+                const startX = cx + rx * Math.cos(startAngle);
+                const startY = cy + ry * Math.sin(startAngle);
+                const endX = cx + rx * Math.cos(endAngle);
+                const endY = cy + ry * Math.sin(endAngle);
+                
+                const largeArcFlag = (territory.angleEnd - territory.angleStart) > 180 ? 1 : 0;
+                
+                const pathData = [
+                    `M ${cx} ${cy}`,
+                    `L ${startX} ${startY}`,
+                    `A ${rx} ${ry} 0 ${largeArcFlag} 1 ${endX} ${endY}`,
+                    'Z'
+                ].join(' ');
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', pathData);
+                path.setAttribute('fill', '#fafafa');
+                path.setAttribute('stroke', territory.color);
+                path.setAttribute('stroke-width', '3');
+                path.setAttribute('class', 'wedge');
+                path.setAttribute('role', 'button');
+                path.setAttribute('tabindex', '0');
+                path.setAttribute('aria-label', `Open ${territory.label} details`);
+                path.setAttribute('data-territory', territory.id);
+                
+                this.svg.appendChild(path);
+                
+                // Add properly centered two-line labels - use original angles for centering
+                const originalStart = territory.angleStart - 2;
+                const originalEnd = territory.angleEnd + 2;
+                const labelAngle = (originalStart + originalEnd) / 2;
+                const angleRad = (labelAngle - 90) * Math.PI / 180;
+                
+                // Calculate center position for the wedge with better spacing
+                const centerRadius = Math.sqrt(Math.pow(rx * Math.cos(angleRad), 2) + Math.pow(ry * Math.sin(angleRad), 2));
+                const labelX = cx + (centerRadius * 0.6) * Math.cos(angleRad);
+                const labelY = cy + (centerRadius * 0.6) * Math.sin(angleRad);
+                
+                // Create two-line labels
+                const twoLineLabels = {
+                    'playful': ['PLAYFUL', 'FRESHNESS'],
+                    'invigorating': ['INVIGORATING', 'FRESHNESS'], 
+                    'elevated': ['ELEVATED', 'FRESHNESS'],
+                    'focused': ['FOCUSED', 'FRESHNESS'],
+                    'calming': ['CALMING', 'FRESHNESS'],
+                    'comforting': ['COMFORTING', 'FRESHNESS']
+                };
+                
+                const labelData = twoLineLabels[territory.id] || [territory.label];
+                
+                // Create text group for better positioning control
+                const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                textGroup.setAttribute('transform', `translate(${labelX}, ${labelY})`);
+                
+                labelData.forEach((line, index) => {
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', 0);
+                    text.setAttribute('y', (index - 0.5) * 28);
+                    text.setAttribute('class', 'wedge-text');
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('dominant-baseline', 'middle');
+                    text.textContent = line;
+
+                    textGroup.appendChild(text);
+                });
+                
+                this.svg.appendChild(textGroup);
+            }
+
+
+            setupEventListeners() {
+                // Keyboard navigation for wedges
+                this.svg.addEventListener('keydown', (e) => {
+                    if (e.target.classList.contains('wedge')) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            const territoryId = e.target.getAttribute('data-territory');
+                            this.showPanel(territoryId);
+                        }
+                    }
+                });
+                this.svg.addEventListener('click', (e) => {
+                    const wedge = e.target.closest('.wedge');
+                    if (wedge) {
+                        const territoryId = wedge.getAttribute('data-territory');
+                        this.showPanel(territoryId);
+                    }
+                });
+
+                // Close panel functionality
+                const closeBtn = document.getElementById('panel-close');
+                closeBtn.addEventListener('click', () => {
+                    this.hidePanel();
+                });
+
+                // Close on escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.panel.classList.contains('active')) {
+                        this.hidePanel();
+                    }
+                });
+
+                // Close when clicking outside panel
+                document.addEventListener('click', (e) => {
+                    if (this.panel.classList.contains('active') &&
+                        !this.panel.contains(e.target) &&
+                        !e.target.closest('.wedge')) {
+                        this.hidePanel();
+                    }
+                });
+            }
+
+            showPanel(territoryId) {
+                const territory = data.territories.find(t => t.id === territoryId);
+                if (!territory) return;
+
+                this.panelTitle.textContent = territory.label;
+                this.panelTagline.textContent = territory.tagline;
+
+                // Set panel border color to match territory
+                this.panel.style.borderColor = territory.color;
+
+                this.needsList.innerHTML = '';
+                if (territory.needs && territory.needs.length > 0) {
+                    territory.needs.forEach(need => {
+                        const li = document.createElement('li');
+                        li.textContent = need;
+                        this.needsList.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.textContent = 'No specific needs data available for this territory.';
+                    li.style.fontStyle = 'italic';
+                    li.style.color = '#94a3b8';
+                    this.needsList.appendChild(li);
+                }
+
+                this.panel.classList.add('active');
+                this.panel.focus();
+            }
+
+            hidePanel() {
+                this.panel.classList.remove('active');
+            }
+        }
+
+        // Initialize the visualization when DOM is ready
+        (() => {
+            if (typeof data !== 'undefined' && data.territories) {
+                new NeedScopeVisualization();
+            } else {
+                console.error('NeedScope data is not available');
+            }
+        })();
+    </script>
+</body>
+</html>

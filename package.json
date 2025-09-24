@@ -1,0 +1,36 @@
+{
+  "name": "needscope-visualization",
+  "version": "1.0.0",
+  "description": "Interactive NeedScope visualization with pie chart territories",
+  "main": "index.html",
+  "scripts": {
+    "dev": "live-server --port=3000 --open=/index.html",
+    "build": "npm run optimize && npm run minify",
+    "optimize": "imagemin src/images/* --out-dir=dist/images",
+    "minify": "html-minifier --input-dir . --output-dir dist --file-ext html",
+    "lint": "eslint *.js",
+    "format": "prettier --write *.html *.css *.js",
+    "serve": "http-server . -p 8080 -o"
+  },
+  "keywords": ["visualization", "pie-chart", "interactive", "svg", "needscope"],
+  "author": "NeedScope Team",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.3",
+    "live-server": "^1.2.2",
+    "http-server": "^14.1.1",
+    "html-minifier": "^4.0.0",
+    "imagemin": "^8.0.1",
+    "imagemin-cli": "^7.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/needscope-visualization.git"
+  }
+}
