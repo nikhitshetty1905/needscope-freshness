@@ -55,7 +55,14 @@
         @media (max-width: 1440px) {
             .panel {
                 width: 400px;
+            }
+
+            .panel.left {
                 left: 20px;
+            }
+
+            .panel.right {
+                right: 20px;
             }
         }
 
@@ -137,7 +144,6 @@
 
         .panel {
             position: absolute;
-            left: 40px;
             top: 50%;
             transform: translateY(-50%);
             width: 480px;
@@ -153,6 +159,14 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             max-height: 80vh;
             overflow-y: auto;
+        }
+
+        .panel.left {
+            left: 40px;
+        }
+
+        .panel.right {
+            right: 40px;
         }
 
         .panel-close {
@@ -618,6 +632,19 @@
 
                 // Set panel border color to match territory
                 this.panel.style.borderColor = territory.color;
+
+                // Determine panel position based on territory
+                // Right side territories: invigorating (0-60°), elevated (60-120°), focused (120-180°)
+                // Left side territories: calming (180-240°), comforting (240-300°), playful (300-360°)
+                this.panel.classList.remove('left', 'right');
+
+                if (territory.angleStart >= 0 && territory.angleStart < 180) {
+                    // Right side territories
+                    this.panel.classList.add('right');
+                } else {
+                    // Left side territories
+                    this.panel.classList.add('left');
+                }
 
                 this.needsList.innerHTML = '';
                 if (territory.needs && territory.needs.length > 0) {
