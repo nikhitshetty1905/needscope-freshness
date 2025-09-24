@@ -634,15 +634,14 @@
                 this.panel.style.borderColor = territory.color;
 
                 // Determine panel position based on territory
-                // Right side territories: invigorating (0-60°), elevated (60-120°), focused (120-180°)
-                // Left side territories: calming (180-240°), comforting (240-300°), playful (300-360°)
                 this.panel.classList.remove('left', 'right');
 
-                if (territory.angleStart >= 0 && territory.angleStart < 180) {
-                    // Right side territories
+                // Right side territories: invigorating, elevated, focused (roughly 0-180°)
+                // Left side territories: calming, comforting, playful (roughly 180-360°)
+                if (territory.id === 'invigorating' || territory.id === 'elevated' || territory.id === 'focused') {
                     this.panel.classList.add('right');
                 } else {
-                    // Left side territories
+                    // playful, comforting, calming
                     this.panel.classList.add('left');
                 }
 
