@@ -144,69 +144,29 @@
 
         .panel {
             position: absolute;
-            width: 280px;
-            background: rgba(255, 255, 255, 0.95);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 480px;
+            background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(24px) saturate(1.2);
             -webkit-backdrop-filter: blur(24px) saturate(1.2);
             border: 2px solid rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            max-height: 320px;
+            max-height: 80vh;
             overflow-y: auto;
-            transform: scale(0.9) translateY(10px);
-            z-index: 1000;
         }
 
-        /* Panel active state */
-        .panel.active {
-            opacity: 1;
-            visibility: visible;
-            transform: scale(1) translateY(0);
+        .panel.left {
+            left: 40px;
         }
 
-        /* Arrow pointer styles */
-        .panel::before {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 0;
-            border: 8px solid transparent;
-        }
-
-        .panel.arrow-left::before {
-            right: 100%;
-            top: 50%;
-            transform: translateY(-50%);
-            border-right-color: rgba(255, 255, 255, 0.95);
-            border-left: none;
-        }
-
-        .panel.arrow-right::before {
-            left: 100%;
-            top: 50%;
-            transform: translateY(-50%);
-            border-left-color: rgba(255, 255, 255, 0.95);
-            border-right: none;
-        }
-
-        .panel.arrow-top::before {
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border-bottom-color: rgba(255, 255, 255, 0.95);
-            border-top: none;
-        }
-
-        .panel.arrow-bottom::before {
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border-top-color: rgba(255, 255, 255, 0.95);
-            border-bottom: none;
+        .panel.right {
+            right: 40px;
         }
 
         .panel-close {
@@ -235,6 +195,10 @@
             outline-offset: 2px;
         }
 
+        .panel.active {
+            opacity: 1;
+            visibility: visible;
+        }
 
         .panel-title {
             font-family: "Inter", "SF Pro Display", system-ui, sans-serif;
@@ -669,6 +633,17 @@
                 // Set panel border color to match territory
                 this.panel.style.borderColor = territory.color;
 
+                // Determine panel position based on territory
+                this.panel.classList.remove('left', 'right');
+
+                // Right side territories: invigorating, elevated, focused (roughly 0-180°)
+                // Left side territories: calming, comforting, playful (roughly 180-360°)
+                if (territory.id === 'invigorating' || territory.id === 'elevated' || territory.id === 'focused') {
+                    this.panel.classList.add('right');
+                } else {
+                    // playful, comforting, calming
+                    this.panel.classList.add('left');
+                }
 
                 this.needsList.innerHTML = '';
                 if (territory.needs && territory.needs.length > 0) {
@@ -688,7 +663,6 @@
                 this.panel.classList.add('active');
                 this.panel.focus();
             }
-
 
             hidePanel() {
                 this.panel.classList.remove('active');
